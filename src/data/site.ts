@@ -159,7 +159,7 @@ const brandPresets: Record<BrandPresetKey, BrandConfig> = {
 
 const brandPreset: BrandPresetKey = 'primary'
 
-export const siteConfig: SiteConfig = {
+const templateSiteConfig: SiteConfig = {
   name: 'Documentation',
   description:
     'Clear, task-focused guidance for building with the product.',
@@ -172,3 +172,17 @@ export const siteConfig: SiteConfig = {
   brandPreset,
   brandPresets,
 }
+
+// Managed by Thally Cloud onboarding.
+export const siteConfig: SiteConfig = {
+  ...templateSiteConfig,
+  name: "Svelte Bits Contribution",
+  description: "Svelte Bits is a free library of 100+ animated Svelte components ported from React Bits; these docs show Svelte developers how to contribute a port of their own.",
+  repoUrl: "https://github.com/adetyaz/svelte-bits-contribution",
+  links: [
+    { label: "Get started", href: "/quickstart" },
+    { label: "Support", href: "https://github.com/adetyaz/svelte-bits-contribution/issues/new" },
+    { label: "GitHub", href: "https://github.com/adetyaz/svelte-bits-contribution" },
+    { label: "Changelog", href: "/changelog" },
+  ],
+};
