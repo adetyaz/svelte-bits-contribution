@@ -1,0 +1,274 @@
+---
+title: Port a React Bits component
+description: Translate a React Bits component to Svelte 5, register it, build its demo, and open a pull request.
+---
+
+This guide walks through a full port, from choosing a component to opening the
+pull request. The running example is **Cursor Grid**, a canvas effect where grid
+cells light up near the cursor. It was ported in July 2026 and merged.
+
+You'll need the repo running locally first: see [Run Svelte Bits locally](/quickstart).
+
+## The files you'll touch
+
+A port is one new component, one new demo, and two small registrations. The
+registry build generates the rest.
+
+| File                                                         | You       | What it's for                                           |
+| ------------------------------------------------------------ | --------- | ------------------------------------------------------- |
+| `src/lib/components/library/<Category>/<Name>/<Name>.svelte` | create    | The component                                           |
+| `src/lib/components/docs/pages/<Name>Demo.svelte`            | create    | The preview, controls, props table and code tab         |
+| `src/lib/constants/categories.ts`                            | edit      | Adds the component to the sidebar and marks it as built |
+| `src/lib/components/docs/pages/demoRegistry.ts`              | edit      | Connects the page URL to your demo                      |
+| `static/r/<name>.json`                                       | generated | The install file for the jsrepo and shadcn CLIs         |
+| `src/lib/constants/componentDependencies.ts`                 | generated | npm packages each component needs                       |
+
+The two generated files are written by `jsrepo build`, which `npm run dev` runs in
+watch mode. Don't edit them by hand.
+
+<Steps>
+  <Step title="Pick a component that isn't ported yet">
+    Choose a component from [React Bits](https://github.com/DavidHDev/react-bits)
+    and check it isn't already in Svelte Bits:
+
+    - Look for it under `src/lib/components/library/`.
+    - Search the [open pull requests](https://github.com/DavidHDev/svelte-bits/pulls)
+      for its name, so you don't duplicate someone's work.
+
+    For a first port, pick something small with no extra dependencies.
+
+  </Step>
+  <Step title="Read the original, and its history">
+    In React Bits, components live in `src/ts-default/<Category>/<Name>/`, as a
+    `.tsx` file plus a `.css` file. Note:
+
+    - every prop and its default value
+    - any npm dependencies (GSAP, three.js, and so on)
+    - animation settings such as easing curves and spring values
+
+    Then check how recently it changed:
+
+    ```bash
+    git log --format='%ad %s' --date=short -- src/ts-default/Animations/CursorGrid/CursorGrid.tsx
+    ```
+
+    <Note>
+    React Bits keeps evolving. Cursor Grid was ported from the July 2026 version, a
+    327-line canvas component. On 13 October 2026 React Bits rewrote it with WebGL
+    and added new props, so the Svelte port is now behind. Check the history before
+    you start, and mention the commit you ported from in your PR.
+    </Note>
+
+  </Step>
+  <Step title="Create the component file">
+    Create the folder and file. **The folder and file names must match**, in
+    PascalCase. The page URL and install name come from them in kebab-case, so
+    `CursorGrid` becomes `cursor-grid`.
+
+    Start the file with the metadata header the registry build reads:
+
+    ```svelte src/lib/components/library/Animations/CursorGrid/CursorGrid.svelte
+    <!-- @svelte-bits
+    {
+      "title": "Cursor Grid",
+      "description": "A grid of cells that light up near the cursor and fade out.",
+      "dependencies": []
+    }
+    -->
+    <script lang="ts">
+    	// the component
+    </script>
+    ```
+
+    The header must be valid JSON. List npm packages the component needs in
+    `dependencies`. The build strips the header out of the code people install.
+
+  </Step>
+  <Step title="Translate React to Svelte 5">
+    Keep the logic line for line where you can, and change only what React-specific
+    code needs. These are the patterns from the Cursor Grid port.
+
+    **Props and defaults -** Same names and defaults as the original; React's
+    `className` becomes Svelte's `class`:
+
+    ```svelte
+    let {
+    	cellSize = 70,
+    	color = '#D946EF',
+    	radius = 140,
+    	class: className = ''
+    }: Props = $props();
+    ```
+
+    **DOM refs -** `useRef` plus `ref={…}` becomes a plain variable plus `bind:this`:
+
+    <Tabs>
+      <Tab title="React">
+        ```tsx
+        const containerRef = useRef<HTMLDivElement>(null);
+        const canvasRef = useRef<HTMLCanvasElement>(null);
+
+        <div ref={containerRef}>
+          <canvas ref={canvasRef} />
+        </div>
+        ```
+      </Tab>
+      <Tab title="Svelte">
+        ```svelte
+        let container: HTMLDivElement;
+        let canvas: HTMLCanvasElement;
+
+        <div bind:this={container}>
+        	<canvas bind:this={canvas}></canvas>
+        </div>
+        ```
+      </Tab>
+    </Tabs>
+
+    **Effects and cleanup -** `useEffect` becomes `$effect`. The cleanup function you
+    return works the same way. `$effect` only runs in the browser, so code that
+    touches `window` is safe there, and React's `'use client'` line can go.
+
+    ```svelte
+    $effect(() => {
+    	const ctx = canvas.getContext('2d');
+    	// … set up, then:
+    	container.addEventListener('pointermove', onPointerMove);
+
+    	return () => {
+    		cancelAnimationFrame(raf);
+    		container.removeEventListener('pointermove', onPointerMove);
+    	};
+    });
+    ```
+
+    **Dependency arrays -** Svelte tracks what an effect reads, so there's no array.
+    When an effect needs to re-run for values it doesn't otherwise read, read them
+    explicitly:
+
+    <Tabs>
+      <Tab title="React">
+        ```tsx
+        useEffect(() => {
+          wakeRef.current?.();
+        }, [gridOpacity, color, lineWidth]);
+        ```
+      </Tab>
+      <Tab title="Svelte">
+        ```svelte
+        $effect(() => {
+        	void [gridOpacity, color, lineWidth];
+        	wake();
+        });
+        ```
+      </Tab>
+    </Tabs>
+
+    **Latest props inside loops -** React components often copy props into a
+    `propsRef` so an animation loop sees new values. Svelte props are always
+    current, so read them directly. Remember that props read synchronously inside
+    an `$effect` make it re-run when they change.
+
+    **Styles -** React Bits ships a separate `.css` file. Svelte Bits components use
+    Tailwind classes in the markup instead:
+
+    ```svelte
+    <div bind:this={container} class="relative h-full w-full overflow-hidden {className}">
+    	<canvas bind:this={canvas} class="block h-full w-full"></canvas>
+    </div>
+    ```
+
+  </Step>
+  <Step title="Register the component">
+    In `src/lib/constants/categories.ts`, make **two** additions:
+
+    1. Add the display name to the right category's `subcategories` in `CATEGORIES`,
+       for example `'Cursor Grid'` under Animations.
+    2. Add the slug to the `IMPLEMENTED_DEMOS` set, for example `'cursor-grid'`.
+
+    In `src/lib/components/docs/pages/demoRegistry.ts`, add one line:
+
+    ```ts
+    'cursor-grid': () => import('./CursorGridDemo.svelte'),
+    ```
+
+  </Step>
+  <Step title="Build the demo page">
+    Copy an existing demo with similar controls and adapt it. Demo pages are built
+    from shared pieces in `src/lib/components/docs/preview/`:
+
+    | Piece | Use it for |
+    | --- | --- |
+    | `TabsLayout` | The Preview and Code tabs |
+    | `Customize` with `PreviewSlider`, `PreviewSwitch`, `PreviewColorPicker`, `PreviewSelect` | Live controls for each prop |
+    | `PropTable` | The props reference |
+    | `DemoCodeTab` | The source code, imported with `?raw` |
+
+    Keep the demo's defaults in one object (Cursor Grid calls it `D`) that matches
+    the component's defaults, so the reset button returns everything to the
+    original values.
+
+  </Step>
+  <Step title="Check everything before the PR">
+    With `npm run dev` running, open your component's page and:
+
+    - try every control, and compare side by side with the React Bits demo
+    - confirm the `[registry]` output shows no errors, and your item count went up by one
+
+    Then run the project's checks:
+
+    ```bash
+    npm run check
+    npm run lint
+    ```
+
+  </Step>
+  <Step title="Open the pull request">
+    Commit the component, demo and registration changes. Merged ports have used
+    this title format:
+
+    ```text
+    feat: port CursorGrid animation from react-bits
+    ```
+
+    In the description, link the React Bits source you ported from, including the
+    commit, and add a short screen recording of the demo.
+
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="“Registry metadata is out of sync”">
+    The registry build compares the components it finds with `IMPLEMENTED_DEMOS`
+    in `categories.ts`. The message says which side is missing:
+
+    - **“Components found in library but missing from IMPLEMENTED_DEMOS”**: add your slug to `IMPLEMENTED_DEMOS`.
+    - **“IMPLEMENTED_DEMOS entries without registry components”**: the slug is there, but the component file isn't where the build expects it. Check the next item.
+
+  </Accordion>
+  <Accordion title="“! skipping … expected <Name>.svelte not found”">
+    The folder and file names don't match. `CursorGrid/` must contain
+    `CursorGrid.svelte`, with the same spelling and capitals.
+  </Accordion>
+  <Accordion title="“Failed to parse @svelte-bits header JSON”">
+    The header comment isn't valid JSON. The usual causes are a trailing comma,
+    single quotes, or a missing quote around a key.
+  </Accordion>
+  <Accordion title="Your page shows “Coming soon”, even though you've ported it">
+    The page says the component hasn't been ported to Svelte yet. That means the
+    sidebar knows about it, but no demo is registered. Add its line to
+    `demoRegistry.ts`, and check the key is the kebab-case slug (`'cursor-grid'`).
+  </Accordion>
+  <Accordion title="Red ENOENT errors mentioning vite:dep-scan">
+    Harmless. Vite misreads the example code on demo pages as imports. See the
+    [quickstart](/quickstart).
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+- [Svelte Bits repository](https://github.com/DavidHDev/svelte-bits)
+- [React Bits repository](https://github.com/DavidHDev/react-bits)
+- [Svelte 5 runes documentation](https://svelte.dev/docs/svelte/what-are-runes)

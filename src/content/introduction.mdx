@@ -1,45 +1,75 @@
 ---
 title: Introduction
-description: Give readers a clear path from their first question to a result they can verify.
+description: An unofficial guide to contributing to Svelte Bits, the library of animated Svelte components ported from React Bits.
 mode: home
 ---
 
 <Hero
-  title="Build documentation around the reader"
-  subtitle="Start with a useful first result, organize what follows, and publish every format from one reviewable source."
-  primaryLabel="Get started"
-  primaryHref="/quickstart"
-  secondaryLabel="Publish your docs"
-  secondaryHref="/guides/create-a-site"
+	title='Contribute to Svelte Bits'
+	subtitle="Port a React Bits component to Svelte 5, wire it into the docs site, and open a pull request that's ready to merge."
+	primaryLabel='Run it locally'
+	primaryHref='/quickstart'
+	secondaryLabel='Port a component'
+	secondaryHref='/guides/port-a-component'
 />
 
-## Build the reader journey
+## What Svelte Bits is
 
-Begin with the task that brings most readers to your documentation, then make
-the next useful step obvious.
+[Svelte Bits](https://sveltebits.xyz) is a free library of animated Svelte
+components: text effects, backgrounds, cursor effects and UI pieces you copy into
+your own project. It's the Svelte port of [React Bits](https://github.com/DavidHDev/react-bits),
+created and maintained by [David Haz](https://github.com/DavidHDev). At the time of
+writing it has 164 components.
 
-<CardGroup cols="2">
-  <Card title="Write your quickstart" icon="party-horn" href="/quickstart">
-    Turn prerequisites, setup, one realistic task, and verification into a short path.
-  </Card>
-  <Card title="Organize your navigation" icon="grid-round" href="/customization">
-    Group related tasks and references around how people use your product.
-  </Card>
-  <Card title="Document your API" icon="code-simple" href="/api">
-    Replace `openapi.yaml` to publish browsable endpoint docs with a live playground.
-  </Card>
-  <Card title="Learn the Thally workflow" icon="wrench" href="/guides/create-a-site">
-    Create, publish, and update sites from the Cloud dashboard, the CLI, or your AI tools.
-  </Card>
-</CardGroup>
+If you only want to **use** the components, the [official docs](https://sveltebits.xyz/get-started/installation)
+cover installation. This guide is for people who want to **add** them.
 
-## Publish from one source
+## Why it needs contributors
 
-Thally turns the same reviewed content into HTML, search, agent discovery files,
-Markdown mirrors, and a read-only MCP surface — so people and AI tools read the
-same, current answer. Add only the locales your readers need.
+React Bits keeps growing, and Svelte Bits catches up one port at a time. Each port
+is a self-contained piece of work: one component, its demo page and a few lines of
+registration. That makes it a good first open-source contribution if you know
+Svelte 5.
 
-<Note type="info" title="Start with the product, not the template">
-  Replace this page with the questions, terminology, and workflows your readers
-  already use. Keep `docs.json` focused on the path between those tasks.
+## Who this is for
+
+Svelte developers who:
+
+- are comfortable with Svelte 5 runes (`$props`, `$state`, `$effect`)
+- can read React and TypeScript well enough to follow what a component does
+- want their work reviewed and merged into a project people use
+
+## The one rule
+
+The project's README is clear about what matters most:
+
+> Component ports must preserve the upstream implementation as closely as possible,
+> including dependencies, shaders, spring configs, props, and behavior.
+
+A port is a translation, not a redesign. Same props, same defaults, same feel.
+
+## What a contribution involves
+
+Each port touches a handful of files: the component itself, a demo page, and two
+registration files. A registry build then generates the install files for you. The
+[porting guide](/guides/port-a-component) walks through every one, using a real
+merged port as the example.
+
+<Note>
+	This is an **unofficial community guide**, written by a contributor with
+	merged ports
+	([CursorGrid](https://github.com/DavidHDev/svelte-bits/pulls?q=is%3Apr+author%3Aadetyaz),
+	MaskedHeading and ScrollExpand). It is loosely affiliated with the Svelte Bits
+	project. When in doubt, the
+	[repository](https://github.com/DavidHDev/svelte-bits) and the maintainer's
+	review are the source of truth.
 </Note>
+
+## Next step
+
+<CardGroup cols='2'>
+	<Card title='Run Svelte Bits locally' icon='rocket' href='/quickstart'>
+		Clone the repo and see a component running on your machine in about 10
+		minutes.
+	</Card>
+</CardGroup>
