@@ -1,47 +1,109 @@
 ---
-title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+title: Run Svelte Bits locally
+description: Clone Svelte Bits, start the docs site, and find where a component and its demo live.
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+By the end of this page you'll have the Svelte Bits docs site running on your
+machine, and you'll know where a component's code and demo live. That's the setup
+every port starts from. It takes about 10 minutes.
 
 ## Before you begin
 
-List only the requirements needed for this workflow:
+You need:
 
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+- **Node.js 20 or later.** This guide was tested with Node.js 22.
+- **Git** and a **GitHub account**.
+- A **fork** of [DavidHDev/svelte-bits](https://github.com/DavidHDev/svelte-bits).
+  Click **Fork** on the repository page.
 
 <Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
-
+  <Step title="Clone your fork">
     ```bash
-    npm install your-package
+    git clone https://github.com/<your-username>/svelte-bits.git
+    cd svelte-bits
     ```
   </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
-
+  <Step title="Install dependencies">
     ```bash
-    your-cli init
+    npm install
     ```
   </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
-
+  <Step title="Start the dev server">
     ```bash
-    your-cli start
+    npm run dev
     ```
+
+    This starts two processes side by side, and you'll see both in the output:
+
+    - **`[registry]`** runs `jsrepo build --watch`. It scans every component and
+      regenerates the install files in `static/r/`. You should see a line like
+      `Created 2 outputs … with 164 items`.
+    - **`[app]`** runs the Vite dev server for the docs site, at
+      `http://localhost:5173/`.
+
+    <Warning>
+    On the first run, the `[app]` output may show a long list of red
+    `ENOENT … [plugin vite:dep-scan]` errors. **These are harmless.** Vite's
+    dependency scanner mistakes the example code shown on demo pages for real
+    imports. The site still works.
+    </Warning>
+
   </Step>
-  <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
+  <Step title="Open a component">
+    Go to [http://localhost:5173/animations/cursor-grid](http://localhost:5173/animations/cursor-grid)
+    and move your cursor over the preview. Grid cells should light up around it.
+
+    Every component page follows the pattern `/<category>/<component-name>`.
+
+  </Step>
+  <Step title="Find its files">
+    Each component has two files you'll work with:
+
+    | What | Where |
+    | --- | --- |
+    | The component | `src/lib/components/library/Animations/CursorGrid/CursorGrid.svelte` |
+    | Its demo page | `src/lib/components/docs/pages/CursorGridDemo.svelte` |
+
+    Open the demo file, change the `cellSize` default in its `D` object from `70`
+    to `40`, and save. The preview updates with smaller cells. Undo the change.
+
   </Step>
 </Steps>
 
-## Choose the next task
+## Check it worked
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+- `http://localhost:5173/` shows the Svelte Bits docs, with 164 components in the sidebar filter.
+- The Cursor Grid preview reacts to your cursor.
+- Editing a demo file updates the page without a restart.
+
+## If something's wrong
+
+<AccordionGroup>
+	<Accordion title='Red ENOENT errors mentioning vite:dep-scan'>
+		Expected on the first run, see the warning in step 3. If the site loads, you
+		can ignore them.
+	</Accordion>
+	<Accordion title='The page is blank or the port is different'>
+		Another app may already be using port 5173. Vite then picks the next free
+		port; check the `Local:` line in the `[app]` output for the real address.
+	</Accordion>
+	<Accordion title='`npm run dev` stops with “Registry metadata is out of sync”'>
+		The registry build found a component that isn't registered in
+		`src/lib/constants/categories.ts`, or the other way round. On a fresh clone
+		this shouldn't happen; if it does after your own changes, see
+		[Troubleshooting](/guides/port-a-component#troubleshooting) in the porting
+		guide.
+	</Accordion>
+</AccordionGroup>
+
+## Next step
+
+<CardGroup cols='2'>
+	<Card
+		title='Port a React Bits component'
+		icon='code'
+		href='/guides/port-a-component'
+	>
+		Turn a React Bits component into a Svelte Bits one, end to end.
+	</Card>
+</CardGroup>
